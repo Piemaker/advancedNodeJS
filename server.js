@@ -10,9 +10,11 @@ fccTesting(app); //For FCC testing purposes
 app.use('/public', express.static(process.cwd() + '/public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+//view engine
+app.set('view engine', 'pug')
 
 app.route('/').get((req, res) => {
-  res.render('Load your view here');
+  res.render('../views/pug/index');
 });
 
 const PORT = process.env.PORT || 3000;
