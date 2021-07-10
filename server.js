@@ -10,6 +10,9 @@ const ObjectID = require("mongodb").ObjectID
 
 const app = express();
 
+myDB(async client => {
+  const myDataBase = await client.db('database').collection('users');
+
 //part for session intialziing
 process.env.SESSION_SECRET="SOME_RANDOM_VALUE"
 app.use(session({
@@ -45,6 +48,7 @@ app.set('view engine', 'pug')
 app.route('/').get((req, res) => {
   res.render(process.cwd() + '/views/pug/index', {title: 'Hello', message: 'Please login'});
 });
+})
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
