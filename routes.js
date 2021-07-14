@@ -69,8 +69,15 @@ app.route('/').get((req, res) => {
   //oAuth
  app.route('/auth/github').get(passport.authenticate('github'));
   app.route('/auth/github/callback').get(passport.authenticate('github', { failureRedirect: '/' }), (req, res) => {
-    res.redirect('/profile');
+    req.session.user_id = req.user.id
+    res.redirect('/chat');
   });
+
+  //chat page
+  app.route("/chat")
+  .get(ensureAuthenticated,(req,res)=>{
+      res.render(process.cwd() + '/views/pug/chat', {username: req.user})
+  })
   //handle missing pages
 app.use((req,res,next)=>{
   res.status(404)
