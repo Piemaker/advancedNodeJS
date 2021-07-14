@@ -9,6 +9,7 @@ const session = require('express-session');
 const passport = require('passport');
 const ObjectID = require('mongodb').ObjectID;
 const LocalStrategy = require('passport-local');
+const bcrypt = require("bcrypt");
 
 const app = express();
 app.set('view engine', 'pug');
@@ -48,7 +49,8 @@ myDB(async (client) => {
     res.render('pug', {
       title: 'Connected to Database',
       message: 'Please login',
-      showLogin: true
+      showLogin: true,
+      showRegistration: true
     });
   });
 
@@ -58,9 +60,52 @@ myDB(async (client) => {
     res.redirect('/profile');
   });
 
+  app.route("/logout")
+  .get((req,res)=>{
+    req.logout()
+    res.redirect("/")
+  })
+
+  app.route("/register")
+  .post((req,res,next)=>{
+    myDataBase.findOne({username:req.body.username},(err,user)=>{
+      if(err){
+        return next(err)
+      }
+      else if (user){
+        res.redirect("/")
+      }
+      else {
+        //use bcrypt to hash the password
+        const saltRounds = 12;
+        const hash = bcrypt.hashSync(req.body.password,saltRounds);
+        myDataBase.insertOne({
+          username: req.body.username,
+          password: hash
+        },
+        (err,doc)=>{
+          if(err){
+            res.redirect("/")
+          }
+          else{
+            next(null, doc.ops[0])
+          }
+        })
+      }
+    })
+  })
+
   app.route('/profile').get(ensureAuthenticated,(req, res) => {
     res.render(process.cwd() + '/views/pug/profile',{username: req.user.username});
   });
+
+  //handle missing pages
+app.use((req,res,next)=>{
+  res.status(404)
+  .type("text")
+  .send("Not Found");
+})
+
 
   // Serialization and deserialization here...
   passport.serializeUser((user, done) => {
@@ -85,7 +130,8 @@ myDB(async (client) => {
         if (!user) {
           return done(null, false);
         }
-        if (password !== user.password) {
+        //check if password's hash is not equal to the saved hash
+        if (!bcrypt.compareSync(user.password,password) ) {
           return done(null, false);
         }
         return done(null, user);
